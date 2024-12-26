@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">To-Let</string>
+    <string name="title_activity_owner_home">OwnerHomeActivity</string>
+    <string name="title_activity_tenant_home">TenantHomeActivity</string>
+    <string name="title_activity_user_verify">UserVerifyActivity</string>
+    <string name="title_activity_verify_otp">VerifyOTPActivity</string>
+    <string name="title_activity_signup">SignActivity</string>
+</resources>

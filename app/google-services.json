@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "405592380311",
+    "project_id": "to-let-fd050",
+    "storage_bucket": "to-let-fd050.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:405592380311:android:8d88977f5d4faf6e4e6ad2",
+        "android_client_info": {
+          "package_name": "com.example.to_let"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcUwFlt-MMP0JnBCx3UzkYWs3AfcphuzM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
