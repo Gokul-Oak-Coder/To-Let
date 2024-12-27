@@ -5,8 +5,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,8 +23,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import com.google.accompanist.pager.rememberPagerState
+import com.google.accompanist.pager.HorizontalPager
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.BadgedBox
+import androidx.compose.material.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -40,6 +48,7 @@ import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Home
@@ -48,6 +57,7 @@ import androidx.compose.material.icons.outlined.Message
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
@@ -55,15 +65,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -71,7 +87,11 @@ import androidx.navigation.compose.rememberNavController
 import com.example.to_let.R
 import com.example.to_let.model.BottomNavItem
 import com.example.to_let.model.BottomNavigationItem
+import com.example.to_let.model.Owner
 import com.example.to_let.model.ShelterData
+import com.example.to_let.model.Tenant
+import com.example.to_let.model.UserType
+import com.google.accompanist.pager.ExperimentalPagerApi
 
 
 class TenantHomeActivity : ComponentActivity() {
@@ -80,6 +100,7 @@ class TenantHomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val role = intent.getStringExtra("ROLE")
         setContent {
             ToLetTheme {
                 val navController = rememberNavController()
@@ -197,9 +218,16 @@ fun Navigation(navController: NavHostController) {
     }
 }
 
+@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun HomeScreen() {
     var selectedCategory by remember { mutableStateOf("House") }
+    val pagerState = rememberPagerState()
+
+    /*// Access PagerState properties directly
+    val currentPage = pagerState.currentPage
+    val currentPageOffset = pagerState.currentPageOffset*/
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -266,7 +294,19 @@ fun HomeScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Category Selection Buttons (House, PG, Rooms, Hotel)
+            /*// Category Selection Buttons (House, PG, Rooms, Hotel)
+            HorizontalPager(
+                count = 1, // Number of buttons
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth()
+            ) { page ->
+                when (page) {
+                    0 -> ShelterButton("House", selectedCategory) { selectedCategory = "House" }
+                    1 -> ShelterButton("PG", selectedCategory) { selectedCategory = "PG" }
+                    2 -> ShelterButton("Rooms", selectedCategory) { selectedCategory = "Rooms" }
+                    3 -> ShelterButton("Hotel", selectedCategory) { selectedCategory = "Hotel" }
+                }
+            }*/
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -290,21 +330,21 @@ fun HomeScreen() {
                 "House" -> ShelterList(
                     listOf(
                         ShelterData(
-                            "House Image",
+                            R.drawable.pg_1,
                             "John Doe",
                             "123 Main St",
                             "Location A",
                             "123-456-7890"
                         ),
                         ShelterData(
-                            "House Image",
+                            R.drawable.pg_8,
                             "John Doe",
                             "123 Main St",
                             "Location A",
                             "123-456-7890"
                         ),
                         ShelterData(
-                            "House Image",
+                            R.drawable.pg_2,
                             "John Doe",
                             "123 Main St",
                             "Location A",
@@ -316,20 +356,20 @@ fun HomeScreen() {
                 "PG" -> ShelterList(
                     listOf(
                         ShelterData(
-                            "PG Image",
+                            R.drawable.pg_3,
                             "Alice",
                             "456 Oak Rd",
                             "Location B",
                             "987-654-3210"
                         ),
-                        ShelterData("PG Image", "Alice", "456 Oak Rd", "Location B", "987-654-3210")
+                        ShelterData(R.drawable.pg_4, "Alice", "456 Oak Rd", "Location B", "987-654-3210")
                     )
                 )
 
                 "Rooms" -> ShelterList(
                     listOf(
                         ShelterData(
-                            "Room Image",
+                            R.drawable.pg_5,
                             "Bob",
                             "789 Pine St",
                             "Location C",
@@ -341,14 +381,14 @@ fun HomeScreen() {
                 "Hotel" -> ShelterList(
                     listOf(
                         ShelterData(
-                            "Hotel Image",
+                            R.drawable.pg_6,
                             "Charlie",
                             "101 Maple Ave",
                             "Location D",
                             "444-567-8901"
                         ),
                         ShelterData(
-                            "Hotel Image",
+                            R.drawable.pg7,
                             "Charlie",
                             "101 Maple Ave",
                             "Location D",
@@ -374,7 +414,7 @@ fun ShelterCard(shelter: ShelterData) {
         ) {
             // Shelter Image (Placeholder)
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                painter = painterResource(shelter.image),
                 contentDescription = "Shelter Image"
             )
 
@@ -397,14 +437,38 @@ fun ShelterCard(shelter: ShelterData) {
 
 @Composable
 fun ShelterList(shelters: List<ShelterData>) {
-    Column(
+    LazyColumn(
         modifier = Modifier.fillMaxWidth()
     ) {
-        shelters.forEach { shelter ->
+       /* shelters.forEach { shelter ->
+            ShelterCard(shelter)
+        }*/
+        items(shelters) { shelter ->
             ShelterCard(shelter)
         }
     }
 }
+
+/*@Composable
+fun ShelterButton(
+    label: String,
+    selectedCategory: String,
+    onClick: () -> Unit
+) {
+    OutlinedButton(
+        onClick = onClick,
+        border = BorderStroke(1.dp, Color.Blue ),
+        modifier = Modifier
+            .size(120.dp, 50.dp)
+            .background( color = if (selectedCategory == label) Color.Gray else Color.Transparent,
+                shape = RoundedCornerShape(50)
+            )
+            .padding(8.dp),
+        // contentPadding = PaddingValues(16.dp)
+    ) {
+        Text(text = label)
+    }
+}*/
 
 @Composable
 fun ShelterButton(
@@ -412,18 +476,23 @@ fun ShelterButton(
     selectedCategory: String,
     onClick: () -> Unit
 ) {
+    val isSelected = selectedCategory == label
+    val backgroundColor = if (isSelected) Color.Blue else Color.White
+    //val borderColor = if (isSelected) Color.Transparent else Color.Blue // Hide border when selected
+
     Button(
         onClick = onClick,
+        border = BorderStroke(1.dp, Color.Blue),
+        colors = ButtonDefaults.buttonColors(backgroundColor),
         modifier = Modifier
             .size(120.dp, 50.dp)
-            .background(
-                color = if (selectedCategory == label) Color.Gray else Color.Transparent,
-                shape = RoundedCornerShape(50)
-            )
+            /*.background(
+                color = backgroundColor,
+              //  shape = RoundedCornerShape(50)
+            )*/
             .padding(8.dp),
-        // contentPadding = PaddingValues(16.dp)
     ) {
-        Text(text = label)
+        Text(text = label, color = if (isSelected) Color.White else Color.Blue)
     }
 }
 
@@ -450,6 +519,6 @@ fun ProfileScreen() {
     Box(
         modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
     ) {
-        Text(text = "Profile Screen")
+
     }
 }

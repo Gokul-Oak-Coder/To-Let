@@ -85,6 +85,7 @@ dependencies {
     implementation (libs.play.services.auth.api.phone)
 
     implementation (libs.androidx.material)
+    implementation (libs.accompanist.pager)
 
 }
 
