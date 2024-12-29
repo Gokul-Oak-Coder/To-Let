@@ -85,6 +85,11 @@ dependencies {
     implementation (libs.play.services.auth.api.phone)
 
     implementation (libs.androidx.material)
+    implementation (libs.accompanist.pager)
+   // implementation (libs.gms.play.services.maps)
+    implementation (libs.places)
+    implementation (libs.maps.compose)
+    implementation (libs.play.services.location)
 
 }
 
