@@ -1,6 +1,7 @@
 package com.example.to_let.ui.activities
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -8,9 +9,13 @@ import android.os.Message
 import android.util.Property
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,7 +37,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddHome
 import androidx.compose.material.icons.filled.Cloud
@@ -90,11 +94,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.to_let.ProfileScreen
+import com.example.to_let.PropertyAddScreen
+import com.example.to_let.PropertyEditScreen
 import com.example.to_let.R
 import com.example.to_let.model.Messages
 import com.example.to_let.model.NavigationItem
@@ -103,7 +111,11 @@ import com.example.to_let.model.Tenant
 import com.example.to_let.model.Properties
 import com.example.to_let.model.RentalRequest
 import com.example.to_let.model.ShelterData
+import com.example.to_let.model.UserProfile
 import com.example.to_let.ui.auth.UserVerifyActivity
+import com.example.to_let.viewmodel.PropertyViewModel
+import com.example.to_let.viewmodel.SplashViewModel
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.launch
 
 class OwnerHomeActivity : ComponentActivity() {
@@ -112,7 +124,7 @@ class OwnerHomeActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        //enableEdgeToEdge()
         val role = intent.getStringExtra("ROLE")
 
         setContent {
@@ -174,6 +186,12 @@ class OwnerHomeActivity : ComponentActivity() {
                     var selectedItemIndex by rememberSaveable {
                         mutableStateOf(0)
                     }
+                    val context = LocalContext.current
+                    val versionName = try {
+                        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+                    } catch (e: Exception) {
+                        "Unknown"
+                    }
                     ModalNavigationDrawer(
                         drawerContent = {
                             ModalDrawerSheet {
@@ -215,6 +233,15 @@ class OwnerHomeActivity : ComponentActivity() {
                                             .padding(NavigationDrawerItemDefaults.ItemPadding)
                                     )
                                 }
+                                // Display the app version at the bottom
+                                Spacer(modifier = Modifier.weight(1f))  // Pushes the version text to the bottom
+                                Text(
+                                    text = "App Version: $versionName",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier
+                                        .padding(20.dp)
+                                        .align(CenterHorizontally)
+                                )
                             }
                         },
                         drawerState = drawerState
@@ -223,7 +250,11 @@ class OwnerHomeActivity : ComponentActivity() {
                             topBar = {
                                 TopAppBar(
                                     title = {
-                                        Text(text = "Todo App")
+                                        Text(
+                                            text = "To-Let App",
+                                            Modifier.fillMaxWidth(),
+                                            //textAlign = TextAlign.Center,
+                                        )
                                     },
                                     navigationIcon = {
                                         IconButton(onClick = {
@@ -236,7 +267,7 @@ class OwnerHomeActivity : ComponentActivity() {
                                                 contentDescription = "Menu"
                                             )
                                         }
-                                    }
+                                    },
                                 )
                             }
                         ) {
@@ -253,6 +284,7 @@ class OwnerHomeActivity : ComponentActivity() {
 fun OwnerNavigation(navController: NavHostController) {
     val context = LocalContext.current
     var logoutState by remember { mutableStateOf(false) }
+    val viewModel: PropertyViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "home") {
         composable("home") {
@@ -268,10 +300,39 @@ fun OwnerNavigation(navController: NavHostController) {
         }
         composable("add_property") {
             AddPropertyScreen(
-                listOf(
-                    Properties("House", false),
-                    Properties("PG", true)
-                ), onAddPropertyClick = { null })
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+        composable("property_add") {
+            PropertyAddScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+        composable("property_edit/{propertyId}") {
+                backStackEntry ->
+            val propertyId = backStackEntry.arguments?.getString("propertyId") ?: return@composable
+            PropertyEditScreen(navController, propertyId, viewModel)
+            /*PropertyEditScreen(
+                navController: navController,
+                propertyId: String, // We are passing property id for navigation
+                viewModel= viewModel
+            )*/
+        }
+        composable("map_screen") {
+            val resultLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    result.data?.getParcelableExtra<LatLng>("selected_location")?.let {
+                        // Handle the selected location
+                      //  mapLocation = "Lat: ${it.latitude}, Long: ${it.longitude}"
+                    }
+                }
+            }
+
+            //MapScreen(resultLauncher = resultLauncher)
         }
         composable("rental_requests") {
             RentalRequestScreen(
@@ -299,14 +360,15 @@ fun OwnerNavigation(navController: NavHostController) {
             )
         }
         composable("profile") {
-            OwnerProfileScreen(
+            /*OwnerProfileScreen(
                 Owner(
                     "Gokul",
                     "gokul.gmail.com",
                     "+91 657858756",
                     listOf()
                 )
-            )
+            )*/
+            ProfileScreen()
         }
         composable("help") {
             OwnerHelpScreen()
@@ -323,26 +385,25 @@ fun OwnerNavigation(navController: NavHostController) {
                 showLogoutDialog = true
             }
         }
-        composable("user_verify"){
-            val intent = Intent(context, UserVerifyActivity::class.java)
-            context.startActivity(intent)
-        }
     }
 }
 
 @Composable
 fun LogoutDialog(navController: NavHostController, onCancel: () -> Unit) {
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = { onCancel() },
         title = { Text("Logout") },
         text = { Text("Are you sure you want to logout?") },
         confirmButton = {
             TextButton(onClick = {
-                navController.navigate("user_verify") {
+                /*navController.navigate("user_verify") {
                     popUpTo(navController.graph.startDestinationId) {
                         inclusive = true // Clear back stack and start fresh
                     }
-                }
+                }*/
+                val intent = Intent(context, UserVerifyActivity::class.java)
+                context.startActivity(intent)
             }) {
                 Text("Yes")
             }
@@ -426,12 +487,13 @@ fun OwnerHomeScreen(
 
                     // Tagline
                     Text(
-                        text = "Your Properties",
+                        text = "Your Guests",
                         textAlign = TextAlign.Center,
                         color = Color.Black,
                         style = TextStyle(fontSize = 20.sp, color = Color.Gray)
                     )
                 }
+                Spacer(modifier = Modifier.height(16.dp))
                 LazyColumn(
                     modifier = Modifier
                         //.padding(innerPadding)
@@ -440,7 +502,7 @@ fun OwnerHomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
-                      //  Text("Your Tenants", style = MaterialTheme.typography.headlineSmall)
+                        //  Text("Your Tenants", style = MaterialTheme.typography.headlineSmall)
                     }
                     items(tenants) { tenant ->
                         TenantCard(tenant)
@@ -479,12 +541,14 @@ fun TenantCard(tenant: Tenant) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPropertyScreen(
-    properties: List<Properties>,
-    onAddPropertyClick: () -> Unit
+    navController: NavHostController,
+    viewModel: PropertyViewModel = viewModel()
 ) {
+    val properties = viewModel.properties.value
+
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddPropertyClick) {
+            FloatingActionButton(onClick = { navController.navigate("property_add") }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add Property")
             }
         },
@@ -518,7 +582,7 @@ fun AddPropertyScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(properties) { property ->
-                    PropertyCard(property)
+                    PropertyCard(property, navController)
                 }
             }
         }
@@ -526,9 +590,13 @@ fun AddPropertyScreen(
 }
 
 @Composable
-fun PropertyCard(property: Properties) {
+fun PropertyCard(property: Properties, navController: NavHostController) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                navController.navigate("property_edit/${property.id}")
+            }
     ) {
         Column(
             modifier = Modifier
@@ -630,32 +698,51 @@ fun MessageCard(message: Messages) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/*@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun OwnerProfileScreen(owner: Owner) {
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(title = { Text("My Profile") })
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(owner.name, style = MaterialTheme.typography.headlineMedium)
-            Text("Email: ${owner.email}", style = MaterialTheme.typography.bodyMedium)
-            Text("Phone: ${owner.phone}", style = MaterialTheme.typography.bodyMedium)
-            Text(
-                "Languages Known: ${owner.languages.joinToString(", ")}",
-                style = MaterialTheme.typography.bodyMedium
+    var userProfile by remember {
+        mutableStateOf(
+            UserProfile(
+                imageUrl = R.drawable.ic_me,
+                username = "Gokulkannan G",
+                phoneNumber = "+91 6345658778",
+                location = "Dharmapuri",
+                knownLanguages = listOf("Tamil", "English"),
+                dob = "01-01-1990"
             )
-            // Add more profile details and edit options
+        )
+    }
+    androidx.compose.material.Scaffold {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 50.dp), contentAlignment = Alignment.Center
+        ) {
+            var showLanguagesDialog by remember { mutableStateOf(false) }
+            var selectedLanguages by remember { mutableStateOf(userProfile.knownLanguages) }
+
+            var showLogoutConfirmation by remember { mutableStateOf(false) }
+
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Image Card with Blur Effect
+                ImageWithBlur(imageUrl = userProfile.imageUrl)
+
+                // Profile Information Section
+                ProfileInfo(
+                    username = userProfile.username,
+                    location = userProfile.location,
+                    phoneNumber = userProfile.phoneNumber,
+                    knownLanguages = selectedLanguages,
+                    dob = userProfile.dob,
+                    onLanguagesSelect = {
+                        selectedLanguages = it
+                    }
+                )
+            }
         }
     }
-}
+}*/
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
